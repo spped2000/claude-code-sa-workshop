@@ -1,9 +1,13 @@
-# Demo A — SA Requirement-to-Spec (16 นาที)
+# Demo A — SA Requirement-to-Spec (~17 นาที)
 
 > ใช้ในช่วง **5.1 SA + Claude Code** · instructor เปิด Claude Code ฉายจอให้ผู้เรียนดูสด
 >
-> **โครงสร้างใหม่ 5 step:** A1 (load) → A2a (draft BRs) → A2b (validate vs CSV) → A3 (ER) → A4 (spec)
-> ทุก step จบด้วย ✓ Self-check ให้ผู้เรียนตามทัน
+> **โครงสร้าง — สอน 2 วิธีเปรียบเทียบ:**
+> - **A1 + A2a = MANUAL** (พิมพ์ prompt ครบทุก rule) → ผู้เรียนเห็นว่ายาว+ต้องคิดเอง
+> - 🎓 **Why Skill?** mini-segment (~1.5 นาที) → เปิด SKILL.md อธิบาย playbook
+> - **A2b + A3 + A4 = USING SKILL** (`@skill mango-sa-analyzer`) → prompt สั้นกว่า 5 เท่า, output มี structure อัตโนมัติ
+>
+> ทุก step จบด้วย ✓ Self-check
 
 > **📂 Reference output (instructor fallback):** ถ้า live demo พัง — เปิด `reference-output/system_analysis.md`, `reference-output/er_diagram.mmd`, `reference-output/tech_spec.md` ใช้ฉายแทน
 
@@ -29,7 +33,7 @@ cp ../../mock-data/rental_contract_MOCK.csv mock-data/
 
 ---
 
-## Step A1 — Load Context (1 นาที)
+## Step A1 — Load Context (1 นาที) · **[MANUAL]**
 
 **พิมพ์สด:**
 ```
@@ -52,9 +56,11 @@ Just confirm you've read both files and tell me the file sizes. Don't do anythin
 
 ---
 
-## Step A2a — Draft Business Rules + Assumptions (3 นาที)
+## Step A2a — Draft Business Rules + Assumptions (3 นาที) · **[MANUAL]**
 
-**พิมพ์สด:**
+> **🎯 จุดประสงค์ของ step นี้:** ให้ผู้เรียนเห็นว่า "ทำได้แบบไม่มี skill" — แต่ต้องพิมพ์ prompt ยาว, ต้องจำ rules เอง, output อาจไม่สม่ำเสมอ ถ้ามีหลายคนทำ
+
+**พิมพ์สด (สังเกต prompt ยาว 15 บรรทัด):**
 ```
 From the requirement file, produce the FIRST DRAFT of analysis/system_analysis.md (Thai).
 Include all 5 sections:
@@ -89,61 +95,96 @@ Use Thai for content, English for technical terms (entity, API, BR-XX, FK).
 
 ---
 
-## Step A2b — Validate vs CSV + Sharpen Assumptions (3 นาที)
+## 🎓 Mini-Segment — Why Skill? (~1.5 นาที)
 
-> **🎓 ก่อนพิมพ์ prompt — เปิด [`AMBIGUITY_MINIDEMO.md`](./AMBIGUITY_MINIDEMO.md) ฉายให้ผู้เรียนเห็น 1-2 ตัวอย่าง bad-vs-good ก่อน (ใช้เวลา ~1 นาที)**
+> **เป้าหมาย:** สอนผู้เรียนเข้าใจว่า skill คืออะไร ก่อนใช้จริงใน A2b เป็นต้นไป
 
-**พิมพ์สด (validation prompt):**
+### พูดสด (1 นาที):
+
+> "ที่เราเพิ่งทำใน A2a — เราต้องพิมพ์ rules ครบทุกครั้ง: 5 sections, BR-XX numbering,
+> Assumption format 3 ส่วน...
+>
+> ลองคิดดู — ถ้าทีม Mango มี SA 5 คน ทุกคนใช้ Claude Code แต่พิมพ์ prompt คนละแบบ
+> Output จะไม่สม่ำเสมอเลย ตรวจยาก, รวมยาก
+>
+> **Skill คือ markdown 1 ไฟล์ ที่เก็บ playbook ของทีมไว้** — Claude อ่านอัตโนมัติทุกครั้ง
+> ที่ skill match กับงานที่เราทำ ทำให้ทุกคนได้ output ตาม pattern เดียวกัน"
+
+### เปิด SKILL.md ฉายให้ผู้เรียนดู (30 วินาที):
+
+```bash
+# เปิดในอีก tab/window
+code .claude/skills/mango-sa-analyzer/SKILL.md
 ```
-ตรวจ analysis/system_analysis.md ที่เพิ่งเขียน 2 อย่าง:
 
-1. Cross-ref กับ rental_contract_MOCK.csv — ทุก field ที่อ้างใน BR ต้องมีจริงใน CSV
-   header (เช่น monthly_rent, deposit, status). ถ้า BR อ้างอิง field ที่ไม่มี
-   ใน CSV → flag เป็น "ต้องเพิ่ม field" ใน assumption
+**ชี้ให้ผู้เรียนเห็น 3 จุด:**
+1. **Description** (บรรทัดบนสุด) — Claude ใช้ตรวจว่า skill ตรงกับงานไหม
+2. **Output Contract** — 5 sections ของ system_analysis, ER format, tech_spec format
+3. **Hard Rules** — ภาษา / CSV cross-ref / BR-XX testable / Assumption flag
 
-2. ตรวจ section Assumptions — ทุกข้อต้องมี 3 ส่วน:
-   จุดคลุมเครือ + Proposed Default + Action
-   ถ้าข้อไหนขาด → แก้ให้ครบ
+> "ทุก rule ที่เราพิมพ์เองใน A2a — อยู่ใน SKILL.md หมดแล้ว
+> ตอนนี้เราจะเรียกใช้ดู — สังเกตว่า prompt จะสั้นลงมาก"
 
-Edit ไฟล์เดิม แล้วบอกผมว่าแก้อะไรบ้าง 3 บรรทัดสรุป.
+---
+
+## Step A2b — Validate vs CSV (USING SKILL) (3 นาที) · **[SKILL]**
+
+> **🎓 ก่อนพิมพ์ prompt — เปิด [`AMBIGUITY_MINIDEMO.md`](./AMBIGUITY_MINIDEMO.md) ฉายให้ผู้เรียนเห็น 1-2 ตัวอย่าง bad-vs-good ก่อน (~1 นาที)**
+
+**พิมพ์สด (สังเกต prompt สั้นลง 5 เท่า):**
 ```
+@skill mango-sa-analyzer
+
+ตรวจ analysis/system_analysis.md กับ mock-data/rental_contract_MOCK.csv —
+fix ทุกจุดที่ผิด rule จาก SKILL.md (CSV cross-ref + Assumption 3 ส่วน).
+
+Edit ไฟล์เดิม. สรุปสิ่งที่แก้ 3 บรรทัด.
+```
+
+**🎯 Compare กับ A2a:**
+- A2a: prompt ~15 บรรทัด ต้องระบุ rules ทุกข้อ
+- A2b: prompt 4 บรรทัด — skill เก็บ rules ไว้แล้ว
 
 **Expected behavior:**
-- Claude ใช้ Read + Edit (ไม่เขียนใหม่ทั้งไฟล์)
+- Claude อ่าน SKILL.md → apply rules → ใช้ Read + Edit (ไม่ rewrite ใหม่)
 - ตอบสรุป 3 บรรทัด: BR ที่ปรับ, Assumption ที่ขยาย, field ที่ต้องเพิ่ม
 
 **✓ Self-check หลัง A2b:**
 - [ ] เปิดไฟล์ → ทุก Assumption มี 3 ส่วนครบ (Default + Action)
-- [ ] ทุก BR ที่อ้าง field ตรง CSV header (ไม่ fabricate)
+- [ ] ทุก BR อ้าง field ตรง CSV header (ไม่ fabricate)
 - [ ] Claude สรุป diff 3 บรรทัด — ไม่ rewrite ใหม่หมด
 
 **💡 พูดสด:**
-> "ขั้นนี้คือ SA judgment moment — Claude draft ได้เร็ว แต่ validate กับ data จริง
-> ต้องมีคน. Pattern: draft → validate → sharpen เป็น loop ที่ SA ทำได้เร็วขึ้น 3-5 เท่า"
+> "เห็นไหม prompt สั้นกว่ามาก แต่ output structure เหมือนเดิม
+> นี่คือ value ของ skill — ทีมใช้ pattern เดียวกัน, prompt ไม่ต้องจำเอง,
+> ไม่ต้องสอน junior ทุกครั้งว่า BR ต้องเขียนยังไง"
 
 ---
 
-## Step A3 — ER Diagram in Mermaid (4 นาที)
+## Step A3 — ER Diagram in Mermaid (3 นาที) · **[SKILL]**
 
-**พิมพ์สด:**
+**พิมพ์สด (prompt สั้นเพราะ skill enforce format ให้):**
 ```
-Based on the analysis you just wrote and the CSV schema, generate a Mermaid
-ER diagram at analysis/er_diagram.mmd with:
+@skill mango-sa-analyzer
 
-- Entities: Contract, Tenant, Property, Payment, PaymentSchedule
-- Thai comments explaining each table
-- Cardinality on every relationship (1-to-many, etc.)
-- PK/FK marked
+สร้าง analysis/er_diagram.mmd จาก system_analysis ที่ validated แล้ว
++ schema ของ rental_contract_MOCK.csv.
 
-After writing the file, print an ASCII summary of the relationships so I can
-sanity-check before opening Mermaid preview.
+จบด้วย ASCII summary ใน chat สำหรับ sanity-check.
 ```
 
-**Expected output shape:**
-- ไฟล์ `.mmd` ขึ้นต้น `erDiagram`
-- 5 entities พร้อม attributes
-- Relationships ครบ (Tenant ||--o{ Contract, Property ||--o{ Contract, Contract ||--o{ Payment, ฯลฯ)
-- ASCII summary ใน response แบบ text
+**🎯 Compare manual approach (สมมุติไม่มี skill — ต้องพิมพ์):**
+> "Generate Mermaid ER diagram with entities A, B, C, D, E.
+> Use Thai comments. Cardinality on every relationship: ||--o{ for 1-to-many,
+> }o--o{ for many-to-many. PK and FK markers. Use erDiagram syntax..."
+> (ยาว ~10 บรรทัด)
+
+**Expected output shape (skill enforce ให้):**
+- ไฟล์ `.mmd` ขึ้นต้น `erDiagram` (skill rule)
+- 5+ entities พร้อม attributes (PK/FK markers)
+- Cardinality ทุก relationship (`||--o{`, `}o--o{`)
+- Thai comments ต่อ entity (skill rule)
+- ASCII summary ใน chat (skill rule บรรทัด 49)
 
 **✓ Self-check หลัง A3:**
 - [ ] เปิด `er_diagram.mmd` ใน VSCode + Mermaid Preview → render ได้ ไม่มี syntax error
@@ -162,22 +203,29 @@ sanity-check before opening Mermaid preview.
 
 ---
 
-## Step A4 — Technical Spec for Dev Handoff (4 นาที)
+## Step A4 — Technical Spec for Dev Handoff (4 นาที) · **[SKILL]**
 
-**พิมพ์สด:**
+**พิมพ์สด (prompt สั้น — skill enforce structure):**
 ```
-Now write analysis/tech_spec.md — this is what Dev will implement from. Include:
+@skill mango-sa-analyzer
 
-1) API endpoints table (method | path | request body | response | auth)
-2) Database DDL in PostgreSQL syntax (CREATE TABLE with FK, indexes)
-3) Sequence diagram (Mermaid) for the "create rental contract" flow — must show
-   validation steps mapped to BR-XX from system_analysis.md
-4) Validation rules section — each rule cross-references BR-XX
-5) Estimated story points per endpoint (1/2/3/5/8 scale)
+สร้าง analysis/tech_spec.md สำหรับ dev handoff
+อิง BR-XX จาก system_analysis และ entities จาก er_diagram.
 
-Target under 600 lines. If you approach that, use /compact style summarization
-by keeping DDL terse.
+Keep DDL terse. Target under 600 lines.
 ```
+
+**🎯 Compare manual approach (ปกติต้องพิมพ์ ~12 บรรทัด):**
+> "Include API endpoints table with method/path/request/response/auth.
+> PostgreSQL DDL with FK and indexes. Sequence diagram in Mermaid for create flow.
+> Validation rules cross-reference BR-XX. Story points 1/2/3/5/8..."
+
+**ที่ skill enforce ให้อัตโนมัติ (จาก SKILL.md บรรทัด 51-56):**
+- API endpoints table format
+- DDL with CHECK constraints linked to BR-XX
+- Sequence diagram (Mermaid)
+- Validation rules table — ทุก row reference BR-XX
+- Story points per endpoint (Fibonacci 1/2/3/5/8)
 
 **Expected output shape (~400-600 lines):**
 - API table ≥6 rows (POST, GET, PUT, DELETE contracts + list + payments)
@@ -199,6 +247,27 @@ by keeping DDL terse.
 > "ถ้าจะใช้ session ต่ออีก 30 นาทีในอีกงานหนึ่ง แนะนำ `/compact` — Claude
 > จะสรุป conversation เหลือสั้นๆ แต่ยังจำสำคัญๆ ได้"
 > — แล้วพิมพ์ `/compact` ให้ดูจริง
+
+---
+
+## 📊 Manual vs Skill — สรุปเปรียบเทียบ (1 นาที ก่อนปิด Demo)
+
+| Aspect | A1, A2a (Manual) | A2b, A3, A4 (Skill) |
+|---|---|---|
+| **Prompt length** | 10-15 บรรทัด ต่อ step | 3-5 บรรทัด ต่อ step |
+| **ต้องจำ rules** | ใช่ — SA ต้องรู้ format เอง | ไม่ — skill เก็บไว้ |
+| **Output consistency ในทีม** | แต่ละคนได้ต่างกัน | ทุกคนได้ pattern เดียวกัน |
+| **เวลา onboard junior SA** | สอน rules ทุกครั้ง | ให้อ่าน SKILL.md ครั้งเดียว |
+| **เปลี่ยน rules** | ต้องบอกทุกคน | แก้ SKILL.md ที่เดียว |
+
+### พูดสด (closing):
+> "ที่เห็นวันนี้ — manual กับ skill ใช้ทั้งคู่ได้ ให้ output คล้ายกัน
+>
+> แต่ในทีมจริง ที่มีหลายคนใช้ Claude Code — skill คือ 'team playbook ที่ Claude อ่านได้'
+> ลด onboarding, เพิ่ม consistency, แก้ที่เดียวอัปเดตทุกคน
+>
+> พรุ่งนี้ทำเองได้: fork `mango-sa-analyzer` → เปลี่ยน 2-3 rules → ได้ skill ใหม่
+> เช่น `mango-construction-analyzer` (สำหรับ BOQ), `mango-rental-analyzer` (สำหรับสัญญาเช่า)"
 
 ---
 
