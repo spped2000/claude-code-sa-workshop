@@ -1,0 +1,77 @@
+%% ER Diagram — Rental Contract Module
+%% Reference output สำหรับ Demo A (instructor fallback)
+%% Source: mock-data/requirement_rental_TH.txt + rental_contract_MOCK.csv
+%% Cross-ref: BR-01..BR-08 ใน system_analysis.md
+
+erDiagram
+    %% ผู้เช่า — เก็บข้อมูลส่วนบุคคล (national_id ต้อง encrypt at rest ตาม NFR-05)
+    TENANT {
+        bigint tenant_id PK "รหัสภายในระบบ"
+        varchar national_id UK "เลขบัตรประชาชน — encrypted (BR-04 ใช้ตรวจสัญญาซ้อน)"
+        varchar full_name "ชื่อ-นามสกุล ผู้เช่า"
+        varchar phone "เบอร์โทร"
+        varchar email "อีเมล (ใช้ส่งใบแจ้งหนี้ ตาม A-01)"
+        text previous_address "ที่อยู่เดิม"
+        timestamp created_at "วันที่สร้าง record"
+    }
+
+    %% หน่วยเช่า — คอนโด/ร้านค้า/สำนักงาน (สถานะกระทบ BR-05)
+    UNIT {
+        varchar unit_id PK "รหัสหน่วย เช่น UNIT-A-0301, SHOP-G-0012"
+        varchar unit_type "ประเภท: คอนโด / ร้านค้า / สำนักงาน — ใช้คำนวณ deposit (BR-02)"
+        decimal size_sqm "ขนาด (ตร.ม.)"
+        int floor "ชั้น"
+        decimal standard_rent "ค่าเช่ามาตรฐาน (อ้างอิง)"
+        varchar unit_status "ใช้งาน / ว่าง / กำลังซ่อมบำรุง — BR-05"
+    }
+
+    %% สัญญาเช่า — entity หลัก (schema ตาม rental_contract_MOCK.csv)
+    CONTRACT {
+        varchar contract_id PK "รหัสสัญญา เช่น RC-2025-0001"
+        bigint tenant_id FK "ผู้เช่า"
+        varchar unit_id FK "หน่วยที่เช่า"
+        date start_date "วันเริ่ม (BR-03: end-start ≥ 180 วัน)"
+        date end_date "วันสิ้นสุด — BR-07 trigger 60 วันก่อน"
+        decimal monthly_rent "ค่าเช่า/เดือน — BR-01: 5000-500000"
+        decimal deposit "เงินประกัน — BR-02: 2x หรือ 3x ของ rent"
+        varchar status "ใช้งาน / หมดอายุ / ยกเลิก — BR-08"
+        varchar contract_pdf_path "path ไฟล์สัญญาสแกน (NFR-06)"
+        timestamp created_at
+    }
+
+    %% ใบแจ้งหนี้ — ออกอัตโนมัติรายเดือน (UC-02)
+    INVOICE {
+        bigint invoice_id PK
+        varchar contract_id FK "สัญญาที่อ้างอิง"
+        date issue_date "วันที่ออก"
+        date due_date "วันครบกำหนด (BR-06 ใช้คำนวณ +15 วัน)"
+        decimal amount "จำนวนเงิน"
+        varchar status "ค้างชำระ / ชำระแล้ว / เกินกำหนด"
+    }
+
+    %% บันทึกการชำระ — Finance บันทึกแต่ละครั้งที่รับเงิน (UC-03)
+    PAYMENT {
+        bigint payment_id PK
+        bigint invoice_id FK "ใบแจ้งหนี้ที่ชำระ"
+        date paid_date "วันที่ชำระ"
+        decimal amount_paid "จำนวนที่ชำระ"
+        varchar method "เงินสด / โอน / บัตรเครดิต"
+        varchar receipt_no "เลขใบเสร็จ"
+    }
+
+    %% เงินประกัน + การคืน (UC-08, A-03)
+    DEPOSIT_LEDGER {
+        bigint ledger_id PK
+        varchar contract_id FK
+        decimal initial_amount "เงินประกันตอนทำสัญญา"
+        decimal refund_amount "เงินที่คืน (null ถ้ายังไม่คืน)"
+        date refund_date
+        text deduction_notes "เหตุผล deduction — A-03 free-text"
+    }
+
+    %% Relationships (cardinality ครบ — สำคัญต่อ DDL FK)
+    TENANT ||--o{ CONTRACT : "1 ผู้เช่ามีได้หลายสัญญา (ต่างหน่วย/ต่างเวลา)"
+    UNIT ||--o{ CONTRACT : "1 หน่วยมีได้หลายสัญญา (ต่างเวลา) — BR-04 บล็อคการซ้อน"
+    CONTRACT ||--o{ INVOICE : "1 สัญญาออกใบแจ้งหนี้รายเดือน"
+    INVOICE ||--o| PAYMENT : "1 ใบแจ้งหนี้ชำระได้ 0 หรือ 1 ครั้ง (full payment)"
+    CONTRACT ||--|| DEPOSIT_LEDGER : "1 สัญญา = 1 ledger (สร้างพร้อมสัญญา)"

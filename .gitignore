@@ -1,0 +1,33 @@
+# Student work output (generated during workshop)
+analysis/
+answers/
+
+# Claude session/cache
+.claude/cache/
+.claude/sessions/
+*.session
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python (if students experiment)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node (if students experiment)
+node_modules/
+
+# Env files
+.env
+.env.local
+*.key
